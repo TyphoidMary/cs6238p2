@@ -1,0 +1,60 @@
+import javax.crypto.*;
+import javax.net.*;
+import javax.net.ssl.SSLContext;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.io.File;
+import java.io.FileInputStream;
+import com.chilkatsoft.*;
+
+
+
+public class client {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+
+	}
+	
+
+	public static void connect() {
+		boolean sucess;
+		try {
+	        System.loadLibrary("chilkat");
+	    } catch (UnsatisfiedLinkError e) {
+	      System.err.println("Native code library failed to load.\n" + e);
+	      System.exit(1);
+	    }
+		
+		CkHttp http = new CkHttp();
+		sucess = http.UnlockComponent("string");
+		
+		if(!sucess)	{			
+			System.out.println(http.lastErrorText());
+			return;
+		}
+		
+		sucess = http.SetSslClientCertPem("/some/file/path/to/pfx/file", "changeit"); //args are path to pfx file and it's private key password
+		
+		if(!sucess) {
+			System.out.println(http.lastErrorText());
+			return;
+		}
+		
+	      
+	}
+	
+	public static void putFile(File file) {
+		
+		
+	}
+	
+	public static File getFile(String fileName) {
+		
+		return null;
+		
+	}
+
+}
