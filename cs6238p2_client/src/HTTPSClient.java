@@ -63,7 +63,11 @@ public class HTTPSClient {
              
             // Create trust manager
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
-            trustManagerFactory.init(keyStore);
+            
+            KeyStore truststore = KeyStore.getInstance("JKS");
+            keyStore.load(new FileInputStream("truststore.jks"),"cs6238".toCharArray());
+             
+            trustManagerFactory.init(truststore);
             TrustManager[] tm = trustManagerFactory.getTrustManagers();
              
             // Initialize SSLContext
@@ -150,7 +154,51 @@ public class HTTPSClient {
         
         public bool login(SSLSocket sckt) {
         	
+        	try {
+   		   	 KeyStore keyStore = KeyStore.getInstance("JKS");
+   		        keyStore.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\keystore.jks"),"cs6238".toCharArray());
+   		        
+   		        KeyStore client = KeyStore.getInstance("JKS");
+   		        client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\user.jks"), "cs6238".toCharArray());
+   		        
+   		        Key key = keyStore.getKey("cs6238", "cs6238".toCharArray());
+   		        
+   		        
+   		        if (key instanceof PrivateKey) {
+   				
+   			        	Certificate cert  = client.getCertificate("cs6238");
+   			        	PublicKey pub = cert.getPublicKey();
+   			        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
+   			        	String encodedKey = Base64.getEncoder().encodeToString(key.getEncoded());
+   			
+   			            byte[] data = encodedKey.getBytes("UTF8");
+   			
+   			            Signature sig = Signature.getInstance("SHA1WithRSA");
+   			            
+   			            sig.initSign(kp.getPrivate());
+   			            sig.update(data);
+   			            byte[] signatureBytes = sig.sign();
+   			            System.out.println("Signature:" + Base64.getEncoder().encode(signatureBytes));
+   			
+   			         
+   			            
+/***************************************************************************
+ * This is the code to verify the signiture
+ */
+   			            sig.initVerify(cert);
+   			            sig.update(data);
+   			
+   			            System.out.println(sig.verify(signatureBytes));
+/*********   			          
+ * End sig verification code
+ */
+   		        	}
+   		        }catch (Exception ex) {
+   		        	
+   		        	System.out.println("Something went bang: " + ex.getMessage());
+   		        }
         	
+        	///do something with the SSLSocket
         }
         public static void checkIn(File file, SSLSocket http) {
     		
