@@ -22,7 +22,8 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.security.KeyStore;
- 
+import java.security.Signature;
+
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -127,7 +128,9 @@ public class HTTPSClient {
                 System.out.println("session ID: " + DatatypeConverter.printHexBinary(sslSession.getId()));
                 
                 string signedSessionID = login(DatatypeConverter.printHexBinary(sslSession.getId()));
-                 
+                // We have a signed session iD back (hopefully) Send it on the wire.
+                
+                
                 // Start handling application content
                 InputStream inputStream = sslSocket.getInputStream();
                 OutputStream outputStream = sslSocket.getOutputStream();
@@ -176,7 +179,7 @@ public class HTTPSClient {
    			            sig.initSign(kp.getPrivate());
    			            sig.update(data);
    			            byte[] signatureBytes = sig.sign();
-   			            return Base64.getEncoder().encode(signatureBytes));
+   			            
    			
    			         
    			            
@@ -187,6 +190,9 @@ public class HTTPSClient {
    			            sig.update(data);
    			
    			            System.out.println(sig.verify(signatureBytes));
+   			            if(sig.verify(signatureBytes)) {
+   			            	return Base64.getEncoder().encode(signatureBytes));
+   			            }else return null;
 /*********   			          
  * End sig verification code
  */
@@ -195,8 +201,6 @@ public class HTTPSClient {
    		        	System.out.println("Something went bang: " + ex.getMessage());
    		        	return null;
    		        }
-        	
-        	///do something with the SSLSocket
         }
         public static void checkIn(File file, SSLSocket http) {
     		
