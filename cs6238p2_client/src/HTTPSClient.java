@@ -142,7 +142,7 @@ public class HTTPSClient {
                 PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(outputStream));
                  
                 // Write data
-                printWriter.println("Hello server this is client2");
+                printWriter.println(signedSessionID);
                 printWriter.println();
                 printWriter.flush();
                  
@@ -151,11 +151,24 @@ public class HTTPSClient {
                     System.out.println("Inut : "+line);
                      
                     if(line.trim().equals("HTTP/1.1 200\r\n")){
-                        break;
-                    }
+                        if(args[0] == "checkout") {
+                        	 printWriter.println(checkout(args[1], sessionID, args[2]));
+                        	 printWriter.println();
+                             printWriter.flush();
+                             
+                        }
+                        else if(args[0] == "checkin") {
+                        	printWriter.println(checkIn(new File(args[1]), sessionID)));
+                        	printWriter.println();
+                            printWriter.flush();
+                        }
+                        else if(args[0] == "delete") {
+                        	
+                        }
+                    } 
                 }
                  
-                sslSocket.close();
+                
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
@@ -229,7 +242,33 @@ public class HTTPSClient {
     		
     	}
     	
-    	public static File checkOut(String fileName, SSLSocket http) {
+        public static void writeFile(BufferedReader bufferedReader) {
+        	
+        	File file;
+    		FileOutputStream stream = null;
+    		 
+    		
+    		while((line = bufferedReader.readLine()) != null){
+    			string content = content + line;
+             }
+    		
+    		file = new File(fileName);
+    		
+	            if(!file.exists()) {
+	    	    	 file.createNewFile();
+	    	     }
+	            
+            stream = new FileOutputStream(file);
+            
+            byte[] contentBytes = content.getGytes();
+            
+            stream.write(contentBytes);
+            stream.flush();
+            stream.close();
+    	
+        }
+    	public static string checkOut(String fileID, string sessionID, string security) {
+    		/*
     		File file;
     		FileOutputStream stream = null;
     		 
@@ -254,6 +293,9 @@ public class HTTPSClient {
             stream.close();
     	
     		return null;
+    		*/
+    		
+    		return getUID() + ":" + sessionID + ":" + "CHECKOUT" + ":" + security + fileID;
     		
     	}
     	
