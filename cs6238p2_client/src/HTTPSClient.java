@@ -23,6 +23,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.security.KeyStore;
 import java.security.Signature;
+import java.security.cert.X509Certificate;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -32,6 +33,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+
+import com.sun.org.apache.xml.internal.security.utils.Base64;
  
 public class HTTPSClient {
     private String host = "127.0.0.1";
@@ -127,7 +130,7 @@ public class HTTPSClient {
                 System.out.println(sslSession.isValid());
                 System.out.println("session ID: " + DatatypeConverter.printHexBinary(sslSession.getId()));
                 
-                string signedSessionID = login(DatatypeConverter.printHexBinary(sslSession.getId()));
+                string signedSessionID = signID(DatatypeConverter.printHexBinary(sslSession.getId()));
                 // We have a signed session iD back (hopefully) Send it on the wire.
                 
                 
@@ -158,7 +161,18 @@ public class HTTPSClient {
             }
         }
         
-        public string login(string SessionID) {
+        public string getUID()
+        {
+        	KeyStore client = KeyStore.getInstance("JKS");
+		    client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\user.jks"), "cs6238".toCharArray());
+		    X509Certificate cert  = client.getCertificate("cs6238");
+		    
+		    return cert.getSerialNumber().toString();
+		    
+		    
+        }
+        
+        public string signID(string SessionID) {
         	
         	try {
    		   
@@ -202,8 +216,16 @@ public class HTTPSClient {
    		        	return null;
    		        }
         }
-        public static void checkIn(File file, SSLSocket http) {
-    		
+        public static string checkIn(File file, string sessionID) {
+        	
+        	Random rand = new Random();
+    		 string fileID = (getUID() + (rand.nextInt(500000000) + 1).ToString());
+    		 
+    		 
+    		 Base64.encode(new String(Files.readAllBytes(Paths.get(file.getPath()))).getBytes());
+    		 
+    		 return getUID() + ":" + sessionID + ":" + "CHECKIN" + ":" + "Placeholder Security attribute" + fileID + Base64.encode(new String(Files.readAllBytes(Paths.get(file.getPath()))).getBytes());
+    		 
     		
     	}
     	
