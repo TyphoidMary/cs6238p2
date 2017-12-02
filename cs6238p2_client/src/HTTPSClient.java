@@ -124,6 +124,9 @@ public class HTTPSClient {
                 System.out.println("\tProtocol : "+sslSession.getProtocol());
                 System.out.println("\tCipher suite : "+sslSession.getCipherSuite());
                 System.out.println(sslSession.isValid());
+                System.out.println("session ID: " + DatatypeConverter.printHexBinary(sslSession.getId()));
+                
+                string signedSessionID = login(DatatypeConverter.printHexBinary(sslSession.getId()));
                  
                 // Start handling application content
                 InputStream inputStream = sslSocket.getInputStream();
@@ -152,24 +155,19 @@ public class HTTPSClient {
             }
         }
         
-        public bool login(SSLSocket sckt) {
+        public string login(string SessionID) {
         	
         	try {
-   		   	 KeyStore keyStore = KeyStore.getInstance("JKS");
-   		        keyStore.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\keystore.jks"),"cs6238".toCharArray());
+   		   
    		        
    		        KeyStore client = KeyStore.getInstance("JKS");
    		        client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\user.jks"), "cs6238".toCharArray());
    		        
-   		        Key key = keyStore.getKey("cs6238", "cs6238".toCharArray());
-   		        
-   		        
-   		        if (key instanceof PrivateKey) {
-   				
+   		        				
    			        	Certificate cert  = client.getCertificate("cs6238");
    			        	PublicKey pub = cert.getPublicKey();
    			        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
-   			        	String encodedKey = Base64.getEncoder().encodeToString(key.getEncoded());
+   			        	String encodedKey = Base64.getEncoder().encodeToString(SessionID);
    			
    			            byte[] data = encodedKey.getBytes("UTF8");
    			
@@ -178,7 +176,7 @@ public class HTTPSClient {
    			            sig.initSign(kp.getPrivate());
    			            sig.update(data);
    			            byte[] signatureBytes = sig.sign();
-   			            System.out.println("Signature:" + Base64.getEncoder().encode(signatureBytes));
+   			            return Base64.getEncoder().encode(signatureBytes));
    			
    			         
    			            
@@ -192,10 +190,10 @@ public class HTTPSClient {
 /*********   			          
  * End sig verification code
  */
-   		        	}
    		        }catch (Exception ex) {
    		        	
    		        	System.out.println("Something went bang: " + ex.getMessage());
+   		        	return null;
    		        }
         	
         	///do something with the SSLSocket
