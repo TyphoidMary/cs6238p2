@@ -263,25 +263,10 @@ public class HTTPSClient {
     		
     	}
     	
-    	public static boolean delete(int fileID, String User) {
+    	public static string delete(string fileID, string sessionID) {
     		
-    		String jsonText = String.format("{\"user\":\"{0}\",\"fileID\":\"{1}\"}", User, fileID);
-    		CkHttpResponse response = http.PostJson("https://project.local/endpoint/delete", jsonText);
+    		return (getUID() + ":" + sessionID + ":" + "DELETE" + fileID);
     		 
-    		CkJsonObject responseBody = new CkJsonObject();
-     		responseBody.Load(response.bodyStr());
-     		CkJsonObject confirmation = responseBody.FindObjectWithMember("deleted");
-     		if(confirmation != null) {
-     			return true; 			
-     		}else {
-     			return false;
-     		}
-    		 
-    	}
-    	
-    	public static void endSession() {
-    		this.sslSocket.
-
     	}
         
     }
