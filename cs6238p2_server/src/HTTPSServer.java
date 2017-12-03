@@ -1,3 +1,4 @@
+package cs6238p2_server.src;
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -493,14 +494,18 @@ public class HTTPSServer {
             FileInputStream metaIn = new FileInputStream(DOCSTORE + docId + META);
             docProps.load(metaIn);
             metaIn.close();
-
+            Scanner input = null;
             //read the doc into a string
             try {
                 File docF = new File(DOCSTORE + docId);
-                Scanner input = new Scanner(docF);
+                input = new Scanner(docF);
                 docString = input.nextLine();
             } catch (Exception e) {
                 System.out.println("--ERROR reading doc file" + e);
+            }finally 
+            {
+            	
+            	input.close();
             }
 
             //check document security
@@ -586,9 +591,10 @@ public class HTTPSServer {
     }
 
     public static void cleanDelegations(String docId) {
-        try {
+    	Scanner input = null;
+    	try {
             File inputF = new File(DOCSTORE + docId + DEL);
-            Scanner input = new Scanner(inputF);
+            input = new Scanner(inputF);
             String line = "";
             String metaString = "";
             String[] delString = new String[2];
@@ -622,6 +628,11 @@ public class HTTPSServer {
             System.out.println("---ERROR reading input file---");
             e.printStackTrace();
         }
+        finally
+        {
+        	
+        	input.close();
+        }
         return;
     }
 
@@ -654,7 +665,7 @@ public class HTTPSServer {
         String userId = inputArray[0];
         String docId = inputArray[3];
         String docString = "";
-
+        Scanner input = null;
         //check to see if document exists
         if (!(docExists(docId))) {
             //if the doc does not exist return error
@@ -671,7 +682,7 @@ public class HTTPSServer {
         try {
             //First read the doc into a string
             File docF = new File(DOCSTORE + docId);
-            Scanner input = new Scanner(docF);
+            input = new Scanner(docF);
             docString = input.nextLine();
             //then encrypt the docString
             String aesKey = getAesKey();
@@ -690,6 +701,10 @@ public class HTTPSServer {
             return "OK";
         } catch (Exception e) {
             System.out.println("--ERROR reading doc file" + e);
+        }
+        finally
+        {
+        	input.close();        	
         }
         //something went wrong
         return "ERROR";

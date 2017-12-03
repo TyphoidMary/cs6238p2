@@ -290,35 +290,8 @@ public class HTTPSClient {
     	
         }
     	public static String checkOut(String fileID, String sessionID, String security) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException {
-    		/*
-    		File file;
-    		FileOutputStream stream = null;
-    		 
-    		///Insert WS call here to populate the buffered reader
-    		
-    		while((line = bufferedReader.readLine()) != null){
-    			string content = content + line;
-             }
-    		
-    		file = new File(fileName);
-    		
-	            if(!file.exists()) {
-	    	    	 file.createNewFile();
-	    	     }
-	            
-            stream = new FileOutputStream(file);
-            
-            byte[] contentBytes = content.getGytes();
-            
-            stream.write(contentBytes);
-            stream.flush();
-            stream.close();
-    	
-    		return null;
-    		*/
     		
     		return getUID() + ":" + sessionID + ":" + "CHECKOUT" + ":" + security + fileID;
-    		
     	}
     	
     	public static String delegate(String fileID, String sessionID, String User, Date time, String permission) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException
