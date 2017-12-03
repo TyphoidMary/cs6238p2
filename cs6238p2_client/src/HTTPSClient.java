@@ -1,4 +1,5 @@
-/*
+package cs6238p2_client.src;
+/**
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -15,14 +16,26 @@
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.Key;
+import java.security.KeyPair;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.Signature;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.sql.Date;
 
@@ -34,8 +47,10 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.xml.bind.DatatypeConverter;
+import java.util.Base64;
+import java.util.Random;
 
-import com.sun.org.apache.xml.internal.security.utils.Base64;
  
 public class HTTPSClient {
     private String host = "127.0.0.1";
@@ -44,7 +59,7 @@ public class HTTPSClient {
      
     public static void main(String[] args){
         HTTPSClient client = new HTTPSClient();
-        client.run();
+        client.run(args);
     }
      
     HTTPSClient(){      
@@ -88,7 +103,7 @@ public class HTTPSClient {
     }
      
     // Start to run the server
-    public void run(){
+    public void run(String[] args){
         SSLContext sslContext = this.createSSLContext();
          
         try{
@@ -113,7 +128,7 @@ public class HTTPSClient {
             this.sslSocket = sslSocket;
         }
          
-        public void run(){
+        public void run(String[] args){
             
             sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
              
@@ -131,7 +146,7 @@ public class HTTPSClient {
                 System.out.println(sslSession.isValid());
                 System.out.println("session ID: " + DatatypeConverter.printHexBinary(sslSession.getId()));
                 
-                string signedSessionID = signID(DatatypeConverter.printHexBinary(sslSession.getId()));
+                String signedSessionID = signID(DatatypeConverter.printHexBinary(sslSession.getId()));
                 // We have a signed session iD back (hopefully) Send it on the wire.
                 
                 
@@ -153,13 +168,13 @@ public class HTTPSClient {
                      
                     if(line.trim().equals("HTTP/1.1 200\r\n")){
                         if(args[0] == "checkout") {
-                        	 printWriter.println(checkout(args[1], sessionID, args[2]));
+                        	 printWriter.println(checkOut(args[1], signedSessionID, args[2]));
                         	 printWriter.println();
                              printWriter.flush();
                              
                         }
                         else if(args[0] == "checkin") {
-                        	printWriter.println(checkIn(new File(args[1]), sessionID)));
+                        	printWriter.println(checkIn(new File(args[1]), signedSessionID));
                         	printWriter.println();
                             printWriter.flush();
                         }
@@ -175,18 +190,20 @@ public class HTTPSClient {
             }
         }
         
-        public string getUID()
+        public static String getUID() throws NoSuchAlgorithmException,  KeyStoreException, CertificateException, FileNotFoundException, IOException
         {
-        	KeyStore client = KeyStore.getInstance("JKS");
+        	KeyStore client;
+			client = KeyStore.getInstance("JKS");
+			
 		    client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\user.jks"), "cs6238".toCharArray());
-		    X509Certificate cert  = client.getCertificate("cs6238");
+		    X509Certificate cert  = (X509Certificate) client.getCertificate("cs6238");
 		    
 		    return cert.getSerialNumber().toString();
 		    
 		    
         }
         
-        public string signID(string SessionID) {
+        public String signID(String SessionID) {
         	
         	try {
    		   
@@ -194,11 +211,13 @@ public class HTTPSClient {
    		        KeyStore client = KeyStore.getInstance("JKS");
    		        client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\user.jks"), "cs6238".toCharArray());
    		        
-   		        				
+   		        Key key = client.getKey("cs6238", "cs6238".toCharArray());	
+   		        
    			        	Certificate cert  = client.getCertificate("cs6238");
+   			        	
    			        	PublicKey pub = cert.getPublicKey();
    			        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
-   			        	String encodedKey = Base64.getEncoder().encodeToString(SessionID);
+   			        	String encodedKey = Base64.getEncoder().encodeToString(SessionID.getBytes());
    			
    			            byte[] data = encodedKey.getBytes("UTF8");
    			
@@ -218,8 +237,9 @@ public class HTTPSClient {
    			            sig.update(data);
    			
    			            System.out.println(sig.verify(signatureBytes));
+   			            
    			            if(sig.verify(signatureBytes)) {
-   			            	return Base64.getEncoder().encode(signatureBytes));
+   			            	return Base64.getEncoder().encode(signatureBytes).toString();
    			            }else return null;
 /*********   			          
  * End sig verification code
@@ -230,27 +250,28 @@ public class HTTPSClient {
    		        	return null;
    		        }
         }
-        public static string checkIn(File file, string sessionID) {
+        public static String checkIn(File file, String sessionID) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException {
         	
         	Random rand = new Random();
-    		 string fileID = (getUID() + (rand.nextInt(500000000) + 1).ToString());
+    		 String fileID = (getUID() + (rand.nextInt(500000000) + 1));
     		 
     		 
-    		 Base64.encode(new String(Files.readAllBytes(Paths.get(file.getPath()))).getBytes());
+    		 Base64.getEncoder().encode(new String(Files.readAllBytes(Paths.get(file.getPath()))).getBytes());
     		 
-    		 return getUID() + ":" + sessionID + ":" + "CHECKIN" + ":" + "Placeholder Security attribute" + fileID + Base64.encode(new String(Files.readAllBytes(Paths.get(file.getPath()))).getBytes());
+    		 return getUID() + ":" + sessionID + ":" + "CHECKIN" + ":" + "Placeholder Security attribute" + fileID + Base64.getEncoder().encode(new String(Files.readAllBytes(Paths.get(file.getPath()))).getBytes());
     		 
     		
     	}
     	
-        public static void writeFile(BufferedReader bufferedReader) {
+        public static void writeFile(BufferedReader bufferedReader, String fileName) throws IOException {
         	
         	File file;
     		FileOutputStream stream = null;
-    		 
+    		String line; 
+    		String content = null;
     		
     		while((line = bufferedReader.readLine()) != null){
-    			string content = content + line;
+    			 content = content + line;
              }
     		
     		file = new File(fileName);
@@ -261,14 +282,14 @@ public class HTTPSClient {
 	            
             stream = new FileOutputStream(file);
             
-            byte[] contentBytes = content.getGytes();
+            byte[] contentBytes = content.getBytes();
             
             stream.write(contentBytes);
             stream.flush();
             stream.close();
     	
         }
-    	public static string checkOut(String fileID, string sessionID, string security) {
+    	public static String checkOut(String fileID, String sessionID, String security) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException {
     		/*
     		File file;
     		FileOutputStream stream = null;
@@ -300,12 +321,12 @@ public class HTTPSClient {
     		
     	}
     	
-    	public static void delegate(string fileID, string sessionID, String User, Date time, string permission)
+    	public static String delegate(String fileID, String sessionID, String User, Date time, String permission) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException
     	{
-    		return (getUID() + ":" + sessionID + ":" + "DELEGATE" + ":" + fileID + ":" + User + ":" + permission + ":" + time.toString())    		
+    		return (getUID() + ":" + sessionID + ":" + "DELEGATE" + ":" + fileID + ":" + User + ":" + permission + ":" + time.toString());    		
     	}
     	
-    	public static string delete(string fileID, string sessionID) {
+    	public static String delete(String fileID, String sessionID) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException {
     		
     		return (getUID() + ":" + sessionID + ":" + "DELETE" + fileID);
     		 
