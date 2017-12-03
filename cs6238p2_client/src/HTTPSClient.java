@@ -24,6 +24,7 @@ import java.io.PrintWriter;
 import java.security.KeyStore;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
+import java.sql.Date;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -257,10 +258,9 @@ public class HTTPSClient {
     		
     	}
     	
-    	public static void delegate(int fileID, String User, Date time, SSLSocket http)
+    	public static void delegate(string fileID, string sessionID, String User, Date time, string permission)
     	{
-    		
-    		
+    		return (getUID() + ":" + sessionID + ":" + "DELEGATE" + ":" + fileID + ":" + User + ":" + permission + ":" + time.toString())    		
     	}
     	
     	public static string delete(string fileID, string sessionID) {
