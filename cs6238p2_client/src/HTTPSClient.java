@@ -14,7 +14,9 @@ package cs6238p2_client.src;
 //}
 //basic server/client code from https://www.pixelstech.net/article/1445603357-A-HTTPS-client-and-HTTPS-server-demo-in-Java
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -111,7 +113,8 @@ public class HTTPSClient {
 
     // Thread handling the socket to server
     static class ClientThread extends Thread {
-    	private String[] args;
+    	@SuppressWarnings("unused")
+		private String[] args;
         private SSLSocket sslSocket = null;
         private List<String> files = new ArrayList<String>();
 
@@ -146,40 +149,43 @@ public class HTTPSClient {
                 PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(outputStream));
                 
                 printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
-                //add every file we check out to this list. This list will be looped over and all checked out filles will be committed at sign out
+                //add every file we check out to this list. This list will be looped over and all checked out files will be committed at sign out
                 files.add("f9b4ef92212b8740");
+                
                 /*
                  files.add(args[2]);
                 
                 if(this.args[0].equals("CHECKIN")) {
-                	
+                	String fileID = signID(args[2]);
                 	if(this.args[1].equals("CONFIDENTIALITY")) {
 	                	// Write data
 	                    //printWriter.println("userID:signed_sessionId:CHECKIN:security_flag:file_ID:base64_encoded_File");
 	                    //checkin encrypt
-	                    printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+	                    printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:CONFIDENTIALITY:" + fileID + ":dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
                 	}
                 	else if(this.args[1].equals("INTEGRITY")) {
-                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:INTEGRITY:baa4ef42211b5619:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:INTEGRITY:" + fileID + ":dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
                 	}
                 	else if(this.args[1].equals("none") || this.args[1].isEmpty()) {
-                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:NONE:abb4ef42211b3685:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:NONE:" + fileID + ":dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
                 	}
                 }else if(this.args[0].equals("CHECKOUT")) {
-                	
+                	String fileID = signID(args[1]);
                 	//checkout encrypted doc
-                    printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKOUT:abb4ef42211b4720");
+                    printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKOUT:" + fileID);
                 	
                 }else if (this.args[0].equals("DELETE")) {
                 	 
-                	printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELETE:abb4ef42211b4720");
+                	printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELETE:" + fileID);
                 	
                 }else if (this.args[0].equals("DELEGATE")) {
                 	
                 	if(args[2].equals("OWNER")) {
-                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:abb4ef42211b4720:f9b4ef92212b8741:OWNER:600");
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":f9b4ef92212b8741:OWNER:600");
                 	} else if(args[2].equals("CHECKIN")) {
-                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:abb4ef42211b4720:f9b4ef92212b8743:CHECKIN:600");
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":f9b4ef92212b8743:CHECKIN:600");
+                	}else if(args[2].equals("BOTH")) {
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":f9b4ef92212b8741:BOTH:600");
                 	}
                 	
                 }
@@ -344,5 +350,34 @@ public class HTTPSClient {
    		        	return null;
    		        }
         }
+    
+        public String readFile(String filePath) {
+        	
+        	File originalFile = new File(filePath);
+            String encodedBase64 = null;
+            FileInputStream fileInputStreamReader = null;
+            try {
+                 fileInputStreamReader = new FileInputStream(originalFile);
+                byte[] bytes = new byte[(int)originalFile.length()];
+                fileInputStreamReader.read(bytes);
+                encodedBase64 = new String(Base64.getEncoder().encodeToString(bytes));
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            finally
+            {
+            	
+            	try {
+					fileInputStreamReader.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+            }
+			return encodedBase64;
+        }
     }
+    
 }

@@ -45,10 +45,8 @@ import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
-
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -528,7 +526,7 @@ public class HTTPSServer {
 		        	PublicKey pub = cert.getPublicKey();
 		        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
 		        	
-		 return aesEncryptDoc(Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded()), input);
+		 return aesEncryptDoc(Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), input);
          
     }
 
@@ -543,7 +541,7 @@ public class HTTPSServer {
 	        	PublicKey pub = cert.getPublicKey();
 	        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
 	        	
-	     return decryptDoc(Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded()), input);
+	     return decryptDoc(Base64.getEncoder().encodeToString(kp.getPublic().getEncoded()), input);
     }
 
     public static String checkout(String[] inputArray) {
