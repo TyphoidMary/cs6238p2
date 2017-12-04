@@ -1,5 +1,6 @@
 package cs6238p2_client.src;
-/**
+
+/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -12,32 +13,14 @@ package cs6238p2_client.src;
 //public class HTTPSClient {   
 //}
 //basic server/client code from https://www.pixelstech.net/article/1445603357-A-HTTPS-client-and-HTTPS-server-demo-in-Java
-
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.Key;
-import java.security.KeyPair;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.sql.Date;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
@@ -48,159 +31,201 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.bind.DatatypeConverter;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.cert.Certificate;
 import java.util.Base64;
-import java.util.Random;
 
- 
 public class HTTPSClient {
+
     private String host = "127.0.0.1";
     //private String host = "172.16.16.99";
     private int port = 9999;
-     
-    public static void main(String[] args){
-        HTTPSClient client = new HTTPSClient();
-        client.run(args);
+    private String[] args;
+
+    public static void main(String[] args) {
+        HTTPSClient client = new HTTPSClient(args);
+        client.run();
     }
-     
-    HTTPSClient(){      
+
+    HTTPSClient(String[] args) {
+    	this.args = args;
     }
-     
-    HTTPSClient(String host, int port){
+
+    HTTPSClient(String host, int port) {
         this.host = host;
         this.port = port;
     }
-     
+
     // Create the and initialize the SSLContext
-    private SSLContext createSSLContext(){
-        try{
+    private SSLContext createSSLContext() {
+        try {
             KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(new FileInputStream("keystore.jks"),"cs6238".toCharArray());
-             
+            keyStore.load(new FileInputStream("keystore.jks"), "cs6238".toCharArray());
+
             // Create key manager
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
             keyManagerFactory.init(keyStore, "cs6238".toCharArray());
             KeyManager[] km = keyManagerFactory.getKeyManagers();
-             
+
             // Create trust manager
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
-            
-            KeyStore truststore = KeyStore.getInstance("JKS");
-            keyStore.load(new FileInputStream("truststore.jks"),"cs6238".toCharArray());
-             
-            trustManagerFactory.init(truststore);
+            trustManagerFactory.init(keyStore);
             TrustManager[] tm = trustManagerFactory.getTrustManagers();
-             
+
             // Initialize SSLContext
             SSLContext sslContext = SSLContext.getInstance("TLSv1");
-            sslContext.init(km,  tm, null);
-             
+            sslContext.init(km, tm, null);
+
             return sslContext;
-        } catch (Exception ex){
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
-         
+
         return null;
     }
-     
+
     // Start to run the server
-    public void run(String[] args){
+    public void run() {
         SSLContext sslContext = this.createSSLContext();
-         
-        try{
+
+        try {
             // Create socket factory
             SSLSocketFactory sslSocketFactory = sslContext.getSocketFactory();
-             
+
             // Create socket
             SSLSocket sslSocket = (SSLSocket) sslSocketFactory.createSocket(this.host, this.port);
-             
+
             System.out.println("SSL client started");
-            new ClientThread(sslSocket).start();
-        } catch (Exception ex){
+            new ClientThread(sslSocket, args).start();
+        } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-     
+
     // Thread handling the socket to server
     static class ClientThread extends Thread {
+    	private String[] args;
         private SSLSocket sslSocket = null;
-         
-        ClientThread(SSLSocket sslSocket){
+
+        ClientThread(SSLSocket sslSocket, String[] args) {
             this.sslSocket = sslSocket;
+            this.args = args;
         }
-         
-        public void run(String[] args){
-            
+
+        public void run() {
+
             sslSocket.setEnabledCipherSuites(sslSocket.getSupportedCipherSuites());
-             
-            try{
+
+            try {
                 // Start handshake
                 sslSocket.startHandshake();
-                
-                 
+
                 // Get session after the connection is established
                 SSLSession sslSession = sslSocket.getSession();
-                 
+
                 System.out.println("SSLSession :");
-                System.out.println("\tProtocol : "+sslSession.getProtocol());
-                System.out.println("\tCipher suite : "+sslSession.getCipherSuite());
+                System.out.println("\tProtocol : " + sslSession.getProtocol());
+                System.out.println("\tCipher suite : " + sslSession.getCipherSuite());
                 System.out.println(sslSession.isValid());
+                //get ssl sesison id
                 System.out.println("session ID: " + DatatypeConverter.printHexBinary(sslSession.getId()));
-                
                 String signedSessionID = signID(DatatypeConverter.printHexBinary(sslSession.getId()));
-                // We have a signed session iD back (hopefully) Send it on the wire.
-                
-                
                 // Start handling application content
                 InputStream inputStream = sslSocket.getInputStream();
                 OutputStream outputStream = sslSocket.getOutputStream();
-                 
+
                 BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
                 PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(outputStream));
-                 
+                
+                printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+
+                
+                if(this.args[0].equals("CHECKIN")) {
+                	
+                	if(this.args[1].equals("CONFIDENTIALITY")) {
+	                	// Write data
+	                    //printWriter.println("userID:signed_sessionId:CHECKIN:security_flag:file_ID:base64_encoded_File");
+	                    //checkin encrypt
+	                    printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                	}
+                	else if(this.args[1].equals("INTEGRITY")) {
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:INTEGRITY:baa4ef42211b5619:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                	}
+                	else if(this.args[1].equals("none") || this.args[1].isEmpty()) {
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:NONE:abb4ef42211b3685:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                	}
+                }else if(this.args[0].equals("CHECKOUT")) {
+                	
+                	//checkout encrypted doc
+                    printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKOUT:abb4ef42211b4720");
+                	
+                }else if (this.args[0].equals("DELETE")) {
+                	 
+                	printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELETE:abb4ef42211b4720");
+                	
+                }else if (this.args[0].equals("DELEGATE")) {
+                	
+                	if(args[2].equals("OWNER")) {
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:abb4ef42211b4720:f9b4ef92212b8741:OWNER:600");
+                	} else if(args[2].equals("CHECKIN")) {
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:abb4ef42211b4720:f9b4ef92212b8743:CHECKIN:600");
+                	}
+                	
+                }
+                /*
                 // Write data
-                printWriter.println(signedSessionID);
+                //printWriter.println("userID:signed_sessionId:CHECKIN:security_flag:file_ID:base64_encoded_File");
+                //checkin encrypt
+                printWriter.println("f9b4ef92212b8740:signed_sessionId:CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                //checkout encrypted doc
+                printWriter.println("f9b4ef92212b8740:signed_sessionId:CHECKOUT:abb4ef42211b4720");
+                //checkin using del priv
+                //printWriter.println("f9b4ef92212b8743:signed_sessionId:CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                //checkin a doc with integeity
+                //printWriter.println("f9b4ef92212b8740:signed_sessionId:CHECKIN:INTEGRITY:baa4ef42211b5619:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                //printWriter.println("f9b4ef92212b8740:signed_sessionId:CHECKIN:NONE:abb4ef42211b3685:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+                //printWriter.println("f9b4ef92212b8741:signed_sessionId:CHECKOUT:abb4ef42211b4720");
+                //printWriter.println("f9b4ef92212b8740:signed_sessionId:DELETE:abb4ef42211b4720");
+                //using OWNER delegation priv to add more delegation
+                //printWriter.println("f9b4ef92212b8741:signed_sessionId:DELEGATE:abb4ef42211b4720:f9b4ef92212b8742:CHECKIN:600");
+                //printWriter.println("f9b4ef92212b8740:signed_sessionId:DELEGATE:abb4ef42211b4720:f9b4ef92212b8741:BOTH:600");
+                //delegate OWNER permission
+                //printWriter.println("f9b4ef92212b8740:signed_sessionId:DELEGATE:abb4ef42211b4720:f9b4ef92212b8741:OWNER:600");
+                //delegate checking
+                //printWriter.println("f9b4ef92212b8740:signed_sessionId:DELEGATE:abb4ef42211b4720:f9b4ef92212b8743:CHECKIN:600");
+                 * 
+*/
                 printWriter.println();
                 printWriter.flush();
-                 
+
                 String line = null;
-                while((line = bufferedReader.readLine()) != null){
-                    System.out.println("Inut : "+line);
-                     
-                    if(line.trim().equals("HTTP/1.1 200\r\n")){
-                        if(args[0] == "checkout") {
-                        	 printWriter.println(checkOut(args[1], signedSessionID, args[2]));
-                        	 printWriter.println();
-                             printWriter.flush();
-                             
-                        }
-                        else if(args[0] == "checkin") {
-                        	printWriter.println(checkIn(new File(args[1]), signedSessionID));
-                        	printWriter.println();
-                            printWriter.flush();
-                        }
-                        else if(args[0] == "delete") {
-                        	
-                        }
-                    } 
+                while ((line = bufferedReader.readLine()) != null) {
+                    System.out.println("Inut : " + line);
+                    String[] result = new String[2];
+                    String status = "";
+                    String docString = "N/A";
+                    result = line.split(":");
+                    status = result[0];
+                    if (result.length > 1) {
+                        docString = result[1];
+                    }
+
+                    //if (line.trim().equals("OK")) {
+                    //if (status.equalsIgnoreCase("OK")) {
+                        System.out.println("server sent: " + status);
+                        System.out.println("docString: " + docString);
+                        break;
+                    //}
                 }
-                 
-                
+
+                sslSocket.close();
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
-        }
-        
-        public static String getUID() throws NoSuchAlgorithmException,  KeyStoreException, CertificateException, FileNotFoundException, IOException
-        {
-        	KeyStore client;
-			client = KeyStore.getInstance("JKS");
-			
-		    client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\user.jks"), "cs6238".toCharArray());
-		    X509Certificate cert  = (X509Certificate) client.getCertificate("cs6238");
-		    
-		    return cert.getSerialNumber().toString();
-		    
-		    
         }
         
         public String signID(String SessionID) {
@@ -231,16 +256,16 @@ public class HTTPSClient {
    			         
    			            
 /***************************************************************************
- * This is the code to verify the signiture
+ * This is the code to verify the signature
  */
    			            sig.initVerify(cert);
    			            sig.update(data);
    			
    			            System.out.println(sig.verify(signatureBytes));
+   			           System.out.println(Base64.getEncoder().encode(signatureBytes).toString());
+   			           return Base64.getEncoder().encode(signatureBytes).toString();
+   			            	
    			            
-   			            if(sig.verify(signatureBytes)) {
-   			            	return Base64.getEncoder().encode(signatureBytes).toString();
-   			            }else return null;
 /*********   			          
  * End sig verification code
  */
@@ -250,60 +275,5 @@ public class HTTPSClient {
    		        	return null;
    		        }
         }
-        public static String checkIn(File file, String sessionID) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException {
-        	
-        	Random rand = new Random();
-    		 String fileID = (getUID() + (rand.nextInt(500000000) + 1));
-    		 
-    		 
-    		 Base64.getEncoder().encode(new String(Files.readAllBytes(Paths.get(file.getPath()))).getBytes());
-    		 
-    		 return getUID() + ":" + sessionID + ":" + "CHECKIN" + ":" + "Placeholder Security attribute" + fileID + Base64.getEncoder().encode(new String(Files.readAllBytes(Paths.get(file.getPath()))).getBytes());
-    		 
-    		
-    	}
-    	
-        public static void writeFile(BufferedReader bufferedReader, String fileName) throws IOException {
-        	
-        	File file;
-    		FileOutputStream stream = null;
-    		String line; 
-    		String content = null;
-    		
-    		while((line = bufferedReader.readLine()) != null){
-    			 content = content + line;
-             }
-    		
-    		file = new File(fileName);
-    		
-	            if(!file.exists()) {
-	    	    	 file.createNewFile();
-	    	     }
-	            
-            stream = new FileOutputStream(file);
-            
-            byte[] contentBytes = content.getBytes();
-            
-            stream.write(contentBytes);
-            stream.flush();
-            stream.close();
-    	
-        }
-    	public static String checkOut(String fileID, String sessionID, String security) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException {
-    		
-    		return getUID() + ":" + sessionID + ":" + "CHECKOUT" + ":" + security + fileID;
-    	}
-    	
-    	public static String delegate(String fileID, String sessionID, String User, Date time, String permission) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException
-    	{
-    		return (getUID() + ":" + sessionID + ":" + "DELEGATE" + ":" + fileID + ":" + User + ":" + permission + ":" + time.toString());    		
-    	}
-    	
-    	public static String delete(String fileID, String sessionID) throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException {
-    		
-    		return (getUID() + ":" + sessionID + ":" + "DELETE" + fileID);
-    		 
-    	}
-        
     }
 }

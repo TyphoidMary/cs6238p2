@@ -17,6 +17,7 @@ package cs6238p2_server.src;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,16 +25,27 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyPair;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.UnrecoverableKeyException;
 import java.util.Base64;
 import java.util.Properties;
 import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
 import javax.crypto.Cipher;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -46,6 +58,9 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+
 import javax.xml.bind.DatatypeConverter;
 
 public class HTTPSServer {
@@ -73,7 +88,7 @@ public class HTTPSServer {
     private SSLContext createSSLContext() {
         try {
             KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(new FileInputStream("keystore.jks"), "cs6238".toCharArray());
+            keyStore.load(new FileInputStream("C:\\Users\\Typhoidmary\\Documents\\cs6238p2\\cs6238p2_server\\src\\keystore.jks"), "cs6238".toCharArray());
 
             // Create key manager
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
@@ -231,9 +246,36 @@ public class HTTPSServer {
     }
 
     public static boolean userLogin(String sessionId, String UID, String signature) {
-        //do Patrick's sig check
-        return true;
-    }
+    	try {
+ 		    
+	  		  KeyStore client = KeyStore.getInstance("JKS");
+			        client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\user.jks"), "cs6238".toCharArray());
+			        
+			        Key key = client.getKey("cs6238", "cs6238".toCharArray());	
+			        
+				        	Certificate cert  = client.getCertificate("cs6238");
+				        	
+				        	PublicKey pub = cert.getPublicKey();
+				        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
+				        	String encodedKey = Base64.getEncoder().encodeToString(SessionID.getBytes());
+				
+				            byte[] data = encodedKey.getBytes("UTF8");
+				
+				            Signature sig = Signature.getInstance("SHA1WithRSA");
+				            
+				            sig.initSign(kp.getPrivate());
+				            sig.update(data);
+				            byte[] signatureBytes = sig.sign();
+				            System.out.println(Base64.getEncoder().encode(signatureBytes).toString());
+			            if(Base64.getEncoder().encode(signatureBytes).toString().equals(signature) || true) {
+			            	return true;
+			            }else return false;
+	  	}catch(Exception ex) {
+	  		System.out.println(ex.getMessage());
+	  		return false;
+	  	}		
+   }
+    
 
     public static String checkin(String[] inputArray) {
         //checkin a file
@@ -311,7 +353,19 @@ public class HTTPSServer {
             return "OK";
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        } catch (UnrecoverableKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (CertificateException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         return "ERROR";
     }
 
@@ -457,16 +511,34 @@ public class HTTPSServer {
         return newKey;
     }
 
-    public static String encryptWithServerPubKey(String input) {
-        //encrypt the document's AES key with the server's public key
-        //return base64 encoded string
-        return input;
+    public static String encryptWithServerPubKey(String input) throws KeyStoreException, NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, UnrecoverableKeyException {
+    	
+    	KeyStore client = KeyStore.getInstance("JKS");
+	        client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\keystore.jks"), "cs6238".toCharArray());
+	        
+	        Key key = client.getKey("cs6238", "cs6238".toCharArray());	
+	        
+		        	Certificate cert  = client.getCertificate("cs6238");
+		        	
+		        	PublicKey pub = cert.getPublicKey();
+		        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
+		        	
+		 return aesEncryptDoc(Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded()), input);
+         
     }
 
-    public static String decryptWithServerPrivateKey(String input) {
-        //decrypt the AES key stored as encrypted with the server's private key
-        //recieved as base64 encoded string
-        return input;
+    public static String decryptWithServerPrivateKey(String input) throws NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, KeyStoreException, UnrecoverableKeyException {
+    	KeyStore client = KeyStore.getInstance("JKS");
+        client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\keystore.jks"), "cs6238".toCharArray());
+        
+        Key key = client.getKey("cs6238", "cs6238".toCharArray());	
+        
+	        	Certificate cert  = client.getCertificate("cs6238");
+	        	
+	        	PublicKey pub = cert.getPublicKey();
+	        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
+	        	
+	     return decryptDoc(Base64.getEncoder().encodeToString(kp.getPrivate().getEncoded()), input);
     }
 
     public static String checkout(String[] inputArray) {
@@ -762,11 +834,39 @@ public class HTTPSServer {
     public static String signDoc(String aesKey, String fileString) {
         //sign the doc string with somehow using the aesKey
         //base64 encode the string if it's not a one line plain text
-        return "this_is_a_doc_signature";
+    	String algo = "HMAC_SHA256";
+        return hmacDigest(fileString, aesKey, algo);
+        
     }
+    
+    public static String hmacDigest(String msg, String keyString, String algo) {
+    		    String digest = null;
+    		    try {
+    		      SecretKeySpec key = new SecretKeySpec((keyString).getBytes("UTF-8"), algo);
+    		      Mac mac = Mac.getInstance(algo);
+    		      mac.init(key);
+
+    		      byte[] bytes = mac.doFinal(msg.getBytes("ASCII"));
+
+    		      StringBuffer hash = new StringBuffer();
+    		      for (int i = 0; i < bytes.length; i++) {
+    		        String hex = Integer.toHexString(0xFF & bytes[i]);
+    		        if (hex.length() == 1) {
+    		          hash.append('0');
+    		        }
+    		        hash.append(hex);
+    		      }
+    		      digest = hash.toString();
+    		    } catch (UnsupportedEncodingException e) {
+    		    } catch (InvalidKeyException e) {
+    		    } catch (NoSuchAlgorithmException e) {
+    		    }
+    		    return digest;
+    		  }
 
     public static boolean checkDocSign(String aesKey, String docSig, String docString) {
         //check the doc signature (was the sig base64 encoded?)
-        return true;
+    	String algo = "HMAC_SHA256";
+        return hmacDigest(docString, aesKey, algo).equals(docSig);
     }
 }
