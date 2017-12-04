@@ -15,6 +15,7 @@ package cs6238p2_client.src;
 //basic server/client code from https://www.pixelstech.net/article/1445603357-A-HTTPS-client-and-HTTPS-server-demo-in-Java
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -37,7 +38,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
 
 public class HTTPSClient {
 
@@ -110,6 +113,7 @@ public class HTTPSClient {
     static class ClientThread extends Thread {
     	private String[] args;
         private SSLSocket sslSocket = null;
+        private List<String> files = new ArrayList<String>();
 
         ClientThread(SSLSocket sslSocket, String[] args) {
             this.sslSocket = sslSocket;
@@ -142,8 +146,11 @@ public class HTTPSClient {
                 PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(outputStream));
                 
                 printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
-
+                //add every file we check out to this list. This list will be looped over and all checked out filles will be committed at sign out
+                files.add("f9b4ef92212b8740");
                 /*
+                 files.add(args[2]);
+                
                 if(this.args[0].equals("CHECKIN")) {
                 	
                 	if(this.args[1].equals("CONFIDENTIALITY")) {
@@ -221,11 +228,72 @@ public class HTTPSClient {
                         break;
                     //}
                 }
-
-                sslSocket.close();
+                	System.out.println("press enter to close your session and check in all files automatically.");
+                	System.in.read();
+                endSession(signedSessionID);
+                
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+        }
+        
+        public void endSession(String session) {
+        	//loop over each file and commit it.
+        	for(String file : this.files) {
+        		InputStream inputStream = null;
+				try {
+					inputStream = sslSocket.getInputStream();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+                OutputStream outputStream = null;
+				try {
+					outputStream = sslSocket.getOutputStream();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+                PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(outputStream));
+                
+        		printWriter.println(file + ":" + session + ":CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
+        		printWriter.println();
+                printWriter.flush();
+                
+                String line = null;
+                try {
+					while ((line = bufferedReader.readLine()) != null) {
+					    System.out.println("Inut : " + line);
+					    String[] result = new String[2];
+					    String status = "";
+					    String docString = "N/A";
+					    result = line.split(":");
+					    status = result[0];
+					    if (result.length > 1) {
+					        docString = result[1];
+					    }
+
+					    //if (line.trim().equals("OK")) {
+					    //if (status.equalsIgnoreCase("OK")) {
+					        System.out.println("server sent: " + status);
+					        System.out.println("docString: " + docString);
+					        break;
+					    //}
+					}
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+        	}
+	        	try {
+					this.sslSocket.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+        	
         }
         
         public String signID(String SessionID) {
