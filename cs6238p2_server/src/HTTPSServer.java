@@ -213,6 +213,9 @@ public class HTTPSServer {
         //    return "OK";
         //}
         //first check that user is valid
+        
+        System.out.println(sessionId + inputSplit[0] + inputSplit[1]);
+        
         if (userLogin(sessionId, inputSplit[0], inputSplit[1])) {
             //user is valid
         } else {
@@ -247,27 +250,29 @@ public class HTTPSServer {
 
     public static boolean userLogin(String sessionId, String UID, String signature) {
     	try {
- 		    
+
 	  		  KeyStore client = KeyStore.getInstance("JKS");
 			        client.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\user.jks"), "cs6238".toCharArray());
 			        
-			        Key key = client.getKey("cs6238", "cs6238".toCharArray());	
+			        //Key key = client.getKey("cs6238", "cs6238".toCharArray());	
 			        
 				        	Certificate cert  = client.getCertificate("cs6238");
 				        	
-				        	PublicKey pub = cert.getPublicKey();
-				        	KeyPair kp = new KeyPair(pub, (PrivateKey) key);
-				        	String encodedKey = Base64.getEncoder().encodeToString(SessionID.getBytes());
-				
-				            byte[] data = encodedKey.getBytes("UTF8");
-				
+				        	//PublicKey pub = cert.getPublicKey();
+				        	//KeyPair kp = new KeyPair(pub, (PrivateKey) key);
+				        	String encodedKey = Base64.getEncoder().encodeToString(sessionId.getBytes());
+				   			
+	   			            byte[] data = encodedKey.getBytes("UTF8");
+				        	
 				            Signature sig = Signature.getInstance("SHA1WithRSA");
-				            
-				            sig.initSign(kp.getPrivate());
-				            sig.update(data);
-				            byte[] signatureBytes = sig.sign();
-				            System.out.println(Base64.getEncoder().encode(signatureBytes).toString());
-			            if(Base64.getEncoder().encode(signatureBytes).toString().equals(signature) || true) {
+				            sig.initVerify(cert);
+	   			            sig.update(data);
+	   			            
+	   			            
+	/***************************************************************************
+	 * This is the code to verify the signature
+	 */     	
+			            if(sig.verify(Base64.getDecoder().decode(signature))) {
 			            	return true;
 			            }else return false;
 	  	}catch(Exception ex) {

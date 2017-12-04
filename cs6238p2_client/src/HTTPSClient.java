@@ -64,7 +64,7 @@ public class HTTPSClient {
     private SSLContext createSSLContext() {
         try {
             KeyStore keyStore = KeyStore.getInstance("JKS");
-            keyStore.load(new FileInputStream("keystore.jks"), "cs6238".toCharArray());
+            keyStore.load(new FileInputStream("C:\\Users\\Typhoidmary\\source\\Dev\\src\\dev\\keystore.jks"), "cs6238".toCharArray());
 
             // Create key manager
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
@@ -143,7 +143,7 @@ public class HTTPSClient {
                 
                 printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKIN:CONFIDENTIALITY:abb4ef42211b4720:dGhpcyBpcyBhIHRlc3QgZmlsZQo=");
 
-                
+                /*
                 if(this.args[0].equals("CHECKIN")) {
                 	
                 	if(this.args[1].equals("CONFIDENTIALITY")) {
@@ -249,6 +249,7 @@ public class HTTPSClient {
    			            Signature sig = Signature.getInstance("SHA1WithRSA");
    			            
    			            sig.initSign(kp.getPrivate());
+   			            
    			            sig.update(data);
    			            byte[] signatureBytes = sig.sign();
    			            
@@ -262,8 +263,8 @@ public class HTTPSClient {
    			            sig.update(data);
    			
    			            System.out.println(sig.verify(signatureBytes));
-   			           System.out.println(Base64.getEncoder().encode(signatureBytes).toString());
-   			           return Base64.getEncoder().encode(signatureBytes).toString();
+
+   			        return Base64.getEncoder().encodeToString(signatureBytes);
    			            	
    			            
 /*********   			          
