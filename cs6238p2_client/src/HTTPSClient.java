@@ -175,11 +175,11 @@ public class HTTPSClient {
                     printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKOUT:" + fileID);
                 	
                 }else if (this.args[0].equals("DELETE")) {
-                	 
+                	String fileID = signID(args[2]); 
                 	printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELETE:" + fileID);
                 	
                 }else if (this.args[0].equals("DELEGATE")) {
-                	
+                	String fileID = signID(args[2]);
                 	if(args[2].equals("OWNER")) {
                 		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":f9b4ef92212b8741:OWNER:600");
                 	} else if(args[2].equals("CHECKIN")) {
