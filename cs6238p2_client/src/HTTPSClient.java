@@ -175,17 +175,17 @@ public class HTTPSClient {
                     printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":CHECKOUT:" + fileID);
                 	
                 }else if (this.args[0].equals("DELETE")) {
-                	String fileID = signID(args[2]); 
+                	String fileID = signID(args[1]); 
                 	printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELETE:" + fileID);
                 	
                 }else if (this.args[0].equals("DELEGATE")) {
-                	String fileID = signID(args[2]);
+                	String fileID = signID(args[1]);
                 	if(args[2].equals("OWNER")) {
-                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":f9b4ef92212b8741:OWNER:600");
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":" + args[3] + ":OWNER:600");
                 	} else if(args[2].equals("CHECKIN")) {
-                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":f9b4ef92212b8743:CHECKIN:600");
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":" + args[3] + ":CHECKIN:600");
                 	}else if(args[2].equals("BOTH")) {
-                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":f9b4ef92212b8741:BOTH:600");
+                		printWriter.println("f9b4ef92212b8740:" + signedSessionID + ":DELEGATE:" + fileID + ":" + args[3] + ":BOTH:600");
                 	}
                 	
                 }
